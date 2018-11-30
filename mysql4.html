@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+   <meta name="keywords" content="MySQL" /> 
+   
+  <title>Little Grass</title>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+
+  <!-- **** Layout Stylesheet **** -->
+  <link rel="stylesheet" type="text/css" href="type.css" charset="utf-8"/>
+  <link rel="shortcut icon" href="img/grass.jpg" />
+</head>
+
+<body>
+<div id="container">
+<!-- HEADER and MENU //-->
+<div id="header">
+  <img src="/img/mysql.png" class="fltright" height=100 alt="MySQL"/>
+  <h1> MySQL</h1>
+  <p>MySQL Engines and Optimazation</p> 
+</div>
+
+<div id="menu">	
+  <a href="share.html">Back</a>
+</div> 	
+
+<div id="contentwide">
+	
+<b>ENGINES:</b>
+MySQL uses two engines, MyISAM and InnoDB.
+<br><br>		
+<b>MyISAM：</b>
+<br>Each MyISAM table is stored on disk in three files. The files have names that begin with the table name and have an extension to indicate the file type. An .frm file stores the table format. The data file has an .MYD (MYData) extension. The index file has an .MYI (MYIndex) extension.
+<br>
+<br>MyISAM Storage Engine Features:
+<table class="table" summary="MyISAM Storage Engine Features" style="border: 1px solid black"><tbody><tr><td><span class="bold"><strong>Storage limits</strong></span></td><td>256TB</td>
+<td><span class="bold"><strong>Transactions</strong></span></td><td>No</td>
+<td><span class="bold"><strong>Locking granularity</strong></span></td><td>Table</td>
+</tr><tr><td><span class="bold"><strong>MVCC</strong></span></td><td>No</td>
+<td><span class="bold"><strong>Geospatial data type support</strong></span></td><td>Yes</td>
+<td><span class="bold"><strong>Geospatial indexing support</strong></span></td><td>Yes</td></tr>
+<tr><td><span class="bold"><strong>B-tree indexes</strong></span></td><td>Yes</td>
+<td><span class="bold"><strong>T-tree indexes</strong></span></td><td>No</td>
+<td><span class="bold"><strong>Hash indexes</strong></span></td><td>No</td></tr>
+<tr><td><span class="bold"><strong>Full-text search indexes</strong></span></td>
+<td>Yes</td><td><span class="bold"><strong>Clustered indexes</strong></span></td>
+<td>No</td><td><span class="bold"><strong>Data caches</strong></span></td><td>No</td></tr>
+<tr><td><span class="bold"><strong>Index caches</strong></span></td><td>Yes</td>
+<td><span class="bold"><strong>Compressed data</strong></span></td><td>Yes</td>
+<td><span class="bold"><strong>Encrypted data</strong></span></td><td>Yes</td></tr>
+<tr><td><span class="bold"><strong>Cluster database support</strong></span></td><td>No</td>
+<td><span class="bold"><strong>Replication support</strong></span></td>
+<td>Yes</td><td><span class="bold"><strong>Foreign key support</strong></span></td><td>No</td></tr>
+<tr><td><span class="bold"><strong>Backup / point-in-time recovery</strong></span></td>
+<td>Yes</td><td><span class="bold"><strong>Query cache support</strong></span></td><td>Yes</td>
+<td><span class="bold"><strong>Update statistics for data dictionary</strong></span></td><td>Yes</td></tr>
+</tbody></table>
+<br>
+Application Scenarios:
+<ul><li>Businesses don't require Transactions(Unable to use in bank transfer)
+<li>Applications need to read data a lot
+<li>Concurrency is comparably low
+<li>Poor hardware machines</ul>
+<br>Optimize:
+<ul><li>Build up Indexes
+<li>Change priority of read and write data
+<li>Reduce frequency of importing and extracting data
+<li>Decompose long-time tasks to reduce blocking time of single command
+<<li>Reduce Concurrency
+<li>Add cache: query_cache_size=256M, query_cache_limit=1M
+<li>Masters use InnoDB, Slaves use MyISAM</ul>  
+
+<br><br><br><b>InnoDB:</b>
+<br>InnoDB Engine replaces MyISAM Engine after version 5.5.5
+<br><br>InnoDB Storage Engine Features:
+<br><table class="table" summary="InnoDB Storage Engine Features" style="border: 1px solid black"><colgroup><col class="featurev0"><col class="featurevalue0"><col class="featurev1"><col class="featurevalue1">
+<col class="featurev2"><col class="featurevalue2"></colgroup><tbody><tr><td><span class="bold"><strong>Storage limits</strong></span></td><td>64TB</td>
+<td><span class="bold"><strong>Transactions</strong></span></td><td>Yes</td>
+<td><span class="bold"><strong>Locking granularity</strong></span></td><td>Row</td></tr><tr><td><span class="bold"><strong>MVCC</strong></span></td><td>Yes</td>
+<td><span class="bold"><strong>Geospatial data type support</strong></span></td><td>Yes</td><td><span class="bold"><strong>Geospatial indexing support</strong></span></td><td>Yes</td></tr>
+<tr><td><span class="bold"><strong>B-tree indexes</strong></span></td><td>Yes</td><td><span class="bold"><strong>T-tree indexes</strong></span></td><td>No</td>
+<td><span class="bold"><strong>Hash indexes</strong></span></td><td>No</td></tr><tr><td><span class="bold"><strong>Full-text search indexes</strong></span></td><td>Yes</td>
+<td><span class="bold"><strong>Clustered indexes</strong></span></td><td>Yes</td><td><span class="bold"><strong>Data caches</strong></span></td><td>Yes</td></tr>
+<tr><td><span class="bold"><strong>Index caches</strong></span></td><td>Yes</td><td><span class="bold"><strong>Compressed data</strong></span></td><td>Yes</td>
+<td><span class="bold"><strong>Encrypted data</strong></span></td><td>Yes</td></tr><tr><td><span class="bold"><strong>Cluster database support</strong></span></td><td>No</td>
+<td><span class="bold"><strong>Replication support</strong></span></td><td>Yes</td><td><span class="bold"><strong>Foreign key support</strong></span></td><td>Yes</td></tr>
+<tr><td><span class="bold"><strong>Backup / point-in-time recovery</strong></span></td><td>Yes</td><td><span class="bold"><strong>Query cache support</strong></span></td><td>Yes</td>
+<td><span class="bold"><strong>Update statistics for data dictionary</strong></span></td><td>Yes</td></tr></tbody></table>
+<br><br>
+Application Scenarios:
+<ul><li>Businesses require Transactions
+<li>Businesses require high concurrency
+<li>Read and write frequently
+<li>Businesses require high data consistency
+<li>Large memory in hardware </ul>  
+<br>Parameters:
+<ul><li>innodb_file_per_table
+<li>innodb_data_home_dir=/data/xxx
+<li>innodb_buffer_pool_size=2048M(cache,50% of the system memory)
+<li>innodb_log_file_size=128M
+<li>innodb_log_buffer_size=16M
+<li>innodb_flush_log_at_trx_commit=1</ul>
+<br>Optimize:
+<ul><li>Make Primary Key as small as possible
+<li>Avoid full table scan
+<li>Set up parameters</ul>
+
+<br><br><p style="border-top: 2px solid #DDDDDD;"></p><br>
+<b>Optimazation:</b>Many aspects can improve the performance of MySQL.
+<br><br>
+<b>Transactions:</b> A series of SQL commands submmit at the same time
+<br>For example, A transfers B 5 dollars:
+<ul>START TRANSACTION;
+<br>update account set money=money-5 where name ='A';
+<br>update account set money=money+5 where name ='B';
+<br>COMMIT;</ul>
+These statements provide control over use of transactions:
+<ul><li>START TRANSACTION or
+         BEGIN start a new transaction.
+<li>COMMIT commits the current transaction,making its changes permanent.
+<li>ROLLBACK rolls back the current transaction, canceling its changes.
+<li>SET autocommit disables or enables the default autocommit mode for the current session.
+</ul>
+
+<br><b>Basic MySQL Operations:</b>
+<br>Create new users:
+<ul>create user 'username'@'localhost' identified by 'password';</ul>	
+Authorize:
+<ul>grant all privilege on [databasename].* to '[username]'@'localhost' indentified by '[password]'
+<br>all privilege -> select,insert,update,delete,[create,drop]</ul>		
+View authorization:
+<ul>show grants for username@localhost;</ul>		
+Revoke authorization:
+<ul>revoke create on [databasename].* from newuser@localhost;</ul>		
+Refresh:
+<ul>flush privileges;</ul>	
+System operation:
+<ul>system xxxxx;</ul>	
+Create database:
+<ul>create database test character set utf8 collate utf8_general_ci;
+<br>data type -> gbk,gb2312,utf8,ascii</ul>	
+Create tables:
+<ul>create table student(
+<br>ID int(4) not null auto_increment,
+<br>name char(20) not null,
+<br>age tinyint(2) not null default '0',
+<br>dept varchar(16) not null,
+<br>primary key (ID),
+<br>key name_index(name)
+<br>)ENGINE=InnoDB DEFAULT CHARSET=utf8;</ul>
+View table structure:
+<ul>desc tablename;</ul>
+Change table structure:
+<ul>ALTER TABLE `test`.`greword` 
+<br>CHANGE COLUMN `word` `word` VARCHAR(50) NOT NULL ;</ul>
+Insert data:
+<ul>insert into test(id,name) values (1,'sun');</ul>
+Update data:
+<ul>update tablename set colname = # where colname = #;
+<br>limit update -> mysql -U(log in)</ul>
+Delete data:
+<ul>delete from tablename where colname = xxx;
+<br>truncate tablename;(Erase a whole table)</ul>
+Insert a column:
+<ul>alter table test add age int(3) after name;</ul>
+Change tablename:
+<ul>rename table [oldname] to [newname]</ul>
+
+<br><br><b>Index:</b> A catalogue of table
+<br>Index not only takes up space, but also requires maintenance when updating the database
+<br>Indexes must be built on the columns of queries after 'where'
+<br><br>Different categories of Index:
+<ul><li>Primary Key(Fastest way to search)
+<li>Regular Index
+<li>Joint Index
+<li>Unique Index</ul>
+index(a,b,c) : only a,ab,abc can go through Index
+<br><br>
+Add Index:
+<ul>alter table tablename add index indexname(name)
+<br>create index indexname on tablename(col(#)); (create index on the first # characters )</ul>
+Delete Index:
+<ul>alter table tablename drop primary key（delete primary key）
+<br>drop index indexname on tablename
+</ul>
+See if the index is running:
+<ul>explain select * from test where name = 'sun'\G;
+<br>\G Rearrange</ul>
+<br><br>
+<b>Slow query optimization:</b>
+<ul><li>Look at if the website is slow or not
+<ul>Press F12 in Chrome</ul>
+<li>See the current processes
+<ul>command: show full processlist;</ul>
+<li>Open slow query log
+<ul>change in 'my.cnf': 
+<br>long_query_time=1
+<br>log-slow-queries = /data/3305/slow.log</ul>
+</ul>
+<b>View high load:</b>
+<ul><li>uptime(enter in Centos)
+<li>expain + SQL query, see if there is an Index
+<li>desc + tablename, view table structure
+</ul>
+<b>Search Engine:</b>
+<br>Adding a Search Engine greatly increases the load of MySQL.
+<br>Optimize:
+<ul><li>Let users use Search Engine after login
+<li>A large number of frequent searches most likely be web crawlers. Block their IPs.
+<li>Build up master-slave synchronization
+<li>Adding Memcached servers before MySQL
+<li>Use search software like Sphinx
+</ul> 
+<b>Database Safty:</b>
+<ul><li>System and process control
+<li>DBA participates in database design
+<li>Need to apply before operation
+<li>Don't set the project cycle too short
+</ul>
+<br><br>
+<b>Database Optimazation:</b>
+<ul>
+1. Hardware
+<ul><li>CPU: 64 CPU. 8-16 cores (large companies). 2-4 cores (small companies)
+<li>Mem: 96G-128G, 3-4 instances (large companies). 32G-64G, 2 instances (small companies)
+<li>Disk: The more, the better. SSD(high concurrency) > SAS(ordinary business) > SATA(offline)
+<li>RAID: RAID0(disuse) > RAID10 > RAID5 > RAID1
+<li>Network Card: Network Card bond. Change network buffer. Optimize TCP.  
+</ul>
+2. Software
+<ul><li>System: x86_64
+<li>software: MySQL compile install
+</ul>
+3. my.cnf
+<ul><li>innodb_buffer_pool_size=2048M (1/3 to 50%)
+<li>sort_buffer_size=2M (thread buffer)
+<li>query_cache_size=64M
+<li>expire_logs_days=7 (automatically delete outdated log)
+<li>key_buffer_size=32M（index buffer, MyISAM）
+<li>skip-name-resolve
+<li>wait_timeout=500 (Connection timed out)
+<li>interactive_timeout=3600
+</ul>
+Monitor:
+<ul>Command: show global status\G
+<br>Tool: mysqlreport
+</ul>
+4. SQL
+<ul>
+<li>Build up Indexes and eliminate slow queries
+<li>Split large complex SQL queries into multiple small SQL queries
+<li>Only use MySQL to store data. Analyses and calculation should be executed in other places.
+</ul>
+5. Framework
+<ul><li>Split the tables exceed 20 million rows.
+<li>Use Nosql
+<li>Not use MySQL for search engines
+<li>Use static server for data like news
+<li>Build up MySQL clusters
+</ul>
+6. Process, system, security
+<ul>
+<li>Any update of the database should be recorded
+<li>Development, tests and maintenance are equally important
+<li>phpmyadmin
+</ul>
+</ul>
+		
+	
+	
+</form>   <br>
+<a href="#container">
+<img border="0" alt="Back To Top" src="img/rocket.jpg" height="50" class="fltright">
+</a>
+<div id="footer">
+<p>Copyright 2017 Siyuan Cao</p>
+</div>
+
+
+</div>
+</body>
+</html>

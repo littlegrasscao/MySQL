@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+   <meta name="keywords" content="MySQL" /> 
+   
+  <title>Little Grass</title>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+
+  <!-- **** Layout Stylesheet **** -->
+  <link rel="stylesheet" type="text/css" href="type.css" charset="utf-8"/>
+  <link rel="shortcut icon" href="img/grass.jpg" />
+</head>
+
+<body>
+<div id="container">
+<!-- HEADER and MENU //-->
+<div id="header">
+  <img src="/img/mysql.png" class="fltright" height=100 alt="MySQL"/>
+  <h1> MySQL</h1>
+  <p>Importing Massive Data</p> 
+</div>
+
+<div id="menu">	
+  <a href="share.html">Back</a>
+</div> 	
+
+<div id="contentwide">
+	
+   <b>As of March 2014, a typical large company like Alibaba has exceeded 100PB data. Also, there is prediction that the total data in the world will be 40 ZB in 2020.</b><br>
+   <b>In the work situation, you usually facing millions of rows data, so knowing how to choose databases and let the databases run successfully is very important.</b><br>
+ 
+   <h4>MySQL Capacity</h4>   
+   MySQL is able to deal with data up to GBs. If you have data in TBs, you should consider either separating MySQL to multiple instances or swtiching to distributed databases such as Hadoop.<br>
+   When reading and writing data in TBs, MySQL reaches its limit, performs very slow and sometimes crashes.<br>
+   
+   <h4>Dealing Data in GBs</h4>
+	Even though MySQL has better performamce when dealing with small data compare to distributed databases, writing or reading millions of rows is not an easy task.<br>
+	Note: In this page I will mainly focus on writing data into MySQL. Data reading is included in MySQL optimazation page. <br><br>
+    I recommand two methods to import massive data into MySQL:<br>
+	<li>R: RMySQL
+	<li>Python: MySQLdb
+	<br>Through my testing, both methods can achieve 10,000 rows per second. However, The actual speed varies on different hardware conditions. 
+	<br><br>The following shows details of the two methods separetly:
+	<br>Testing condition: An local MySQL instance at port 3306 and contains a schema named as 'test'. Account name is 'root' with a password '123456'.
+	<br>Data Source: Under directory 'C:\testdata\', there are a couple csv files contain data. Tablenames in database are the same as csv filenames.
+	<br><img src="/img/directory.jpg"  height=150 alt="directory"/>   
+	<br>Note: I use CSV filetype here!
+	<br><br>
+<form>
+<fieldset>
+     <legend>R</legend>
+library(readr)
+<br>library(DBI)
+<br>library(RMySQL)
+<br><br>files <- dir("C:/testdata/")
+<br>filePath <- sapply(files, function(x){ 
+<p>  paste("C:/testdata/",x,sep="")})</p> 
+<br>data <- lapply(filePath, function(x){
+<p>  read.csv(x, header=T)})</p> 
+<br>conn <- dbConnect(MySQL(), dbname = "test", username="root", password="sun123", host="127.0.0.1", port=3306)
+<br>dbWriteTable(conn, "Jan", data[[1]], row.names = FALSE) 
+<br>dbDisconnect(conn)
+<br><br>Note: 'dbWriteTable' requires a hardcode "Tablename", so each dataset have to sent seperately or you can combine all the datasets into one by using 'rbind'.
+</fieldset>
+</form>
+
+<br><b>By using R, it automaticlly creates table when importing the data. However, By using Python, the table should already exist before importing.</b>	
+<br>Python are able to import all the CSV files at one time.
+	
+<br><br><form>
+<fieldset>
+     <legend>Python</legend>
+	 #coding:utf-8<br>
+<br>import MySQLdb
+<br>import csv
+<br>import os
+<br><br>def loadsql(filename):
+<p>db = MySQLdb.connect("127.0.0.1", "root", "123456", "test", charset="utf8")
+<br>	cursor = db.cursor()
+<br><br>cursor.execute("LOAD DATA LOCAL INFILE 'C:\\\testdata\\\%s.csv' IGNORE INTO TABLE `%s`"
+<br>	"FIELDS TERMINATED BY ',' "
+<br>	"ENCLOSED BY '\"'"
+<br>	"LINES TERMINATED BY '\r\n'"
+<br>	"IGNORE 1 LINES;" % (filename,filename))
+<br><br>cursor.close()
+<br>	db.commit()
+<br>	db.close()</p>
+<br>file =  os.listdir("C:\testdata\")
+<br>for i in range(0,len(file)):
+<p>file[i]=file[i].replace(".csv",'')</p>
+for i in range(0,len(file)):
+<p>loadsql(file[i])</p>
+<br>print "Done"
+	 </fieldset>
+</form>
+
+<br>The main idea used in Python method is a MySQL operation code.
+<br>Hive(distributed database built on Hadoop) also uses 'LOAD' to import data.
+<br><br><form>
+<fieldset>
+     <legend>MySQL</legend>   
+LOAD DATA [LOW_PRIORITY | CONCURRENT] [LOCAL] INFILE 'file_name'  
+<br>  [REPLACE | IGNORE] INTO TABLE tbl_name  
+<br>  [CHARACTER SET charset_name]
+<br>  [{FIELDS | COLUMNS} [TERMINATED BY 'string']
+ <br> [[OPTIONALLY] ENCLOSED BY 'char'] [ESCAPED BY 'char'] ]
+ <br> [LINES [STARTING BY 'string'] [TERMINATED BY 'string'] ]  
+<br>  [IGNORE number LINES]  
+<br>  [(col_name_or_user_var,...)]  
+<br>  [SET col_name = expr,...]
+<br><br>LOW_PRIORITY : Execute without any other client accessing the table
+<br>CONCURRENT :  Other threads can retrieve the data of this table
+<br>TERMINATED BY : Filter the space character between fields and rows 
+<br>ENCLOSED BY : Filter the quote characters at both ends of the character 
+<br>ESCAPED BY : Transfer meaning 
+<br>LINES STARTING BY : Insert the rows with characters behind a specific character into the database 
+<br>IGNORE umber LINES :  Set how many rows to ignore in file 
+<br>SET col_name=expr : Assign fields that have no default values in the text
+	 </fieldset>
+</form>   <br>
+<a href="#container">
+<img border="0" alt="Back To Top" src="img/rocket.jpg" height="50" class="fltright">
+</a>
+<div id="footer">
+<p>Copyright 2017 Siyuan Cao</p>
+</div>
+
+
+</div>
+</body>
+</html>

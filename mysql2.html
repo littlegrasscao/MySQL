@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+   <meta name="keywords" content="MySQL" /> 
+   
+  <title>Little Grass</title>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+
+  <!-- **** Layout Stylesheet **** -->
+  <link rel="stylesheet" type="text/css" href="type.css" charset="utf-8"/>
+  <link rel="shortcut icon" href="img/grass.jpg" />
+</head>
+
+<body>
+<div id="container">
+<!-- HEADER and MENU //-->
+<div id="header">
+  <img src="/img/mysql.png" class="fltright" height=100 alt="MySQL"/>
+  <h1> MySQL</h1>
+  <p>Database Backup and Logs</p> 
+</div>
+
+<div id="menu">	
+  <a href="share.html">Back</a>
+</div> 	
+
+<div id="contentwide">
+
+<h4>When will we use 'mysqldump' backup?</h4>
+<li>Migrating or upgrading databases 
+<li>Adding slave instances
+<li>When the master or slave instances shutdown accidently, they can switch between each other. 
+<li>Human errors cause data lost
+<li>Backups across the machine rooms
+
+<h4>The backup frequency in the work environment</h4>	
+<li>Small and medium-sized companies execute once a day at lowest flow. Lock the tables during backup process.
+<li>Using 'rsync', Linux command, to copy all the 'binlog' backups to remote server. 
+<li>Large-sized companies execute in 0:00a.m. every Saturday. The data from Sunday to the next Saturday is increment.
+<li>Using a slave instance in synchronization as backup.
+<br><br>
+<form>
+<fieldset>
+     <legend>mysqlbinlog</legend>
+To open the function, adding the following into 'my.cnf':
+<br>log_bin=mysqld-bin
+<br>server-id = 1
+<br><br>View 'binlog' content
+<br>/usr/bin/mysqlbinlog --base64-output=decode-rows -v /var/lib/mysql/mysqld-bin.000003
+<br><br>Cutting
+<br>mysqladmin -uroot -p123456 flush-log
+<br><br>View current binlog
+<br>mysqldump -uroot -p123456 --master-data=1 --compact test
+<br><br>Backup
+<br>mysqlbinlog /var/lib/mysql/mysqld-bin.000003 > all.sql
+<br><br>Cutting by position 
+<br>mysqlbinlog /var/lib/mysql/mysqld-bin.000003 --start-position=365 --stop-position=456 -r pos.sql
+<br><br>Parameter:
+<br>-d specify database
+</fieldset>
+</form>
+
+<br><br>
+<form>
+<fieldset>
+     <legend>Log Type</legend>
+error log:
+<p>[mysqld_safe]</p>
+<p>log-error=/data/3306/mysql_xxx.err (directory)</p>
+query log:
+<p><li>general log</p>
+<p>[mysqld_safe]</p>
+<p>general_log_file=/data/3306/xxx.log</P>
+<li>Slow log
+<p>[mysqld_safe]</p>
+<p>long_query_time=1（query time）</p>
+<p>log-slow-queries = /data/3306/slow.log (directory)</p>
+<p>log_queries_not_using_indexes (not using index)</p>
+binary log:
+<p>log_bin (record bin-log)</p>
+<p>sql_log_bin（temporary log）</p>
+</fieldset>
+</form>
+<h4>Log Mode:</h4>
+Statement Level Mode 
+<br>Advantages: There is no need to record changes in each row. Reducing the amount of logs and saving I/O. 
+<br><br>
+Row Level Mode
+<br>Advantages: The log records details of each row of data being modified. Available functioin and trigger. 
+<br>Disadvantages: bin-logs are too big
+<br><br>
+Mixed Mode
+<br>Differentiating log type according to each specific SQL
+<br><br>Configure：
+<p>binlog_format='MIXED'</P>
+<p>set global binlog_format='ROW'</P>
+<br>
+
+<form>
+<fieldset>
+     <legend>Backup Operation</legend>
+Back up all the databases:
+<br>mysqldump -uroot -p123456 -B test > /testdb.sql（Logical data in the form of SQL statements）
+
+<br><br>Check backup contents: 
+<br>grep -E -v "#|\/|^$|--" /testdb.sql
+
+<br><br>Recover Data：
+<br>source /mysql/testDB.sql (Need to log in database first)
+<br>mysql -uroot -p123456 --default-character-set=utf8 test < /testdb.sql
+
+<br><br>Back up multiple databases: 
+<br>mysqldump -uroot -p123456 -B databasename1 databasename2|gzip > /multiple.sql
+
+<br><br>Back up all the databases separately: 
+<br>mysql -uroot -p123456 -e "show databases;"|grep -Evi "infor|mysql|perf"|sed -r 's#^([a-z].*$)#mysqldump -uroot -p123456 -B \1|gzip > /mysql/\1.sql.gz#g' |bash
+<br>Restore a small database faster
+
+<br><br>Back up single database：
+<br>mysqldump -uroot -p123456 databasesname tablename;
+
+<br><br>Key parameters: 
+<br>--compact remove notes
+<br>-B specific database 
+<br>-A all the databases
+<br>-d back up table structure
+<br>-t back up data
+<br>-F flush binlog 
+<br>--master-data add binlog name and position
+<br>-l lock tables 
+<br>-x，--lock-all-tables
+
+<br><br>myisam:
+<br>mysqldump -u -p -A -B --master-data=1 -x --events|gzip > /mysql/all.sql.gz 
+<br><br>innoDB:
+<br>mysqldump -u -p --all-databases --flush-privileges --single-transaction --master-data=1 --flush-logs --triggers --routines --events --hex-blob > /mysql/all.sql.gz 
+
+<br><br>Check database status:
+<br>show status like '%sel%';
+<br>show global status -> viewing the entire database running status information 
+<br>show full processlist -> Viewing the complete SQL statement is being performed 
+</fieldset>
+</form>
+
+<h4>Backup Case</h4>
+one morning my department header deleted a schema unconsciously which directly caused a customer blasted us for his economic lost. 
+<br>The process to recover the lost data:
+<li>Confirm if the backup exists and the 'binlog' is complete.
+<li>Stop a slave. Flush the 'binlog' of the master(mysql-bin.000015). Find and delete the 'drop' command in 'mysql-bin.000014'. Convert it to 'bin.sql'.
+<li>Recover the backup and 'bin.sql' to the slave instance. 
+<li>Stop the master. Convert 'mysql-bin.000015' to sql and recover to the slave. Change the slave as server. 
+<br>The case shows process control is very important to prevent problems.
+
+
+<a href="#container">
+<img border="0" alt="Back To Top" src="img/rocket.jpg" height="50" class="fltright">
+</a>
+<div id="footer">
+<p>Copyright 2017 Siyuan Cao</p>
+</div>
+
+
+</div>
+</body>
+</html>

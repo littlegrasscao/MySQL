@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+   <meta name="keywords" content="MySQL" /> 
+   
+  <title>Little Grass</title>
+  <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+
+  <!-- **** Layout Stylesheet **** -->
+  <link rel="stylesheet" type="text/css" href="type.css" charset="utf-8"/>
+  <link rel="shortcut icon" href="img/grass.jpg" />
+</head>
+
+<body>
+<div id="container">
+<!-- HEADER and MENU //-->
+<div id="header">
+  <img src="/img/mysql.png" class="fltright" height=100 alt="MySQL"/>
+  <h1> MySQL</h1>
+  <p>Multiple Instances building and Achieve master-slave synchronization</p> 
+</div>
+
+<div id="menu">	
+  <a href="share.html">Back</a>
+</div> 	
+
+<div id="contentwide">
+
+   <b>In this report I will show how to build multiple MySQL instances on one physical machine and take two instances as an example to make master-slave synchronization.</b><br>
+
+   <h4>What are MySQL instances?</h4>   
+   In simpler terms, one instance is one MySQL process. If you use 'yum install', then you will have one MySQL process running on your computer. By using compiled installation, you can have more than one MySQL process running on your computer.
+
+   <h4>Why do we need multiple instances?</h4>
+   The main reason we put more than one MySQL instance on a server is avoiding system resources waste.<br>
+   In general, small and medium sized companies use machines with 4 cores CPU and 32G-64G memory to run 2 instances. Large companies like Baidu use machines with 8-16 cores CPU and 96G-128G memory to run 3-4 instances.
+
+   <h4>Mater-slave synchronization</h4>
+   All the master-slave synchronization is actually asynchronous.
+   <br>There are four different examples to do synchronization:
+   <br><img src="/img/master-slave.jpg"  height=250 alt="master-slave"/>   
+   <img src="/img/master-slave-slave.jpg"  style="margin-left:80px" height=190 alt="master-slave-slave"/>
+   <img src="/img/master-master.jpg"  style="padding:0px;margin:0px" height=200 alt="master-master"/>
+   <img src="/img/master-master-master.jpg" style="margin-left:50px" height=250 alt="master-master-master"/><br>
+
+   <br><br><h4>Master-slave synchronization principle</h4>
+   <img src="/img/principle.png" height=400 alt="principle" />
+   <br>The master server has only one thread called IO(input/out). The slave server has two threads, IO and SQL. When a client using our website, the data is written into the master database. The IO thread in master server also writes data changes to 'bin' logs. 
+   When starting a slave, the IO thread in the slave will ask for contents of 'bin' log in the master server. After getting the data, IO thread records the position of data in master bin-log into master.info and make a copy into slave's data log, relay-log. 
+   Finally, SQL thread in the slave server reads the relay-log and add new data into the slave server.     
+
+   <h4>Improvement of master-slave synchronization</h4>
+   Synchronization improves robustness of database structure, speed of access and ease of maintenance management.
+   <br>1) Masters and Slaves are the backups for each other   
+   <blockquote>   I. Since the master and the slave are totally the same except the most recent data recorded in the 'binlog'. If the master machine is down, we can first check the master's status then drag the 'binlog' of master to slave.  
+   <br>   II. Double-Writing. The pressure is pretty high on this circumstance.
+   <br>   III.Using applications to write short 'binlog' (1 min for example) to cache. 
+   <br>   IV.Changing asynchronous synchronization to real time synchronization. Keeping the data consistent and security at the highest extent. Google has a semisync plug-in unit can do this.
+   <br>   V. Setting a silence time 10s to avoid issues may happen in synchronization. (Big companies don't do it) 
+   </blockquote>  
+
+   <br>2) Read and write separation between masters and slaves to share the pressure of the website
+   <blockquote>Medium and large sized companies: making programs(php, java)
+   <br>Testing Environment: mysql-proxy
+   <br>Portals: Distributed dbproxy
+   </blockquote>  
+ 
+   <br>3)Split slaves according to services
+   <blockquote>
+   Example: 1 master 5 slaves
+   <br>Slave 1 2 3 used to view articles and tables (provide read portion for load balancing)
+   <br>Slave 4 used to background access, scripting tasks, data analysis, and developer browsing
+   <br>Slave 5 used to open the 'binlog' function of the slave server, enabling incremental backup and recovery
+   <br>In Read and Write separation, the backstage can be slow to ensure visitors' speed.
+   </blockquote>  
+
+   <h4>Install Multiple Instances</h4>
+   <b>System Condition</b>: CentOS7.3 minimal install, 20G SSD disk, 1024MB memory(work situation can scale up)
+   <br>I am using 'CMAKE' method to install MySQL-5.7.19 at port 3306 and 3307. 
+   <br><form>
+  <fieldset>
+    <legend>Prepare</legend>
+    mkdir /tools
+    | cd /tools
+    | wget https://cmake.org/files/v3.9/cmake-3.9.3.tar.gz
+    | tar xf cmake-3.9.3.tar.gz
+    | cd cmake-3.9.3  ##download cmake
+    <br>yum install gcc gcc-c++  ##system needs gcc compiler
+    <br>./configure | gmake | gmake install | cd ../   ##install cmake
+    <br>mkdir /usr/local/boost | cd /usr/local/boost | wget http://sourceforge.net/projects/boost/files/boost/1.59.0/boost_1_59_0.tar.gz  ##the older version may not need
+    <br>yum install ncurses-devel -y   ##install the dependent package
+    <br>groupadd mysql | useradd mysql -s /sbin/nologin -M -g mysql  ##create user and group
+    <br>//-s targets the shell which the user uses, /sbin/nologin in here means don't login | -M means don't create user main dir| -g means user group is mysql
+  </fieldset>
+</form>
+    Now we are ready to install MySQL.
+<br><form>   
+<fieldset>
+     <legend>Install MySQL</legend>
+     put mysql-version.tar.gz into /tools. I take version 5.7.19 as an example here. 
+     <br>get the source file at "https://dev.mysql.com/downloads/mysql/"
+     <br>tar zxf mysql-5.7.19.tar.gz | cd mysql-5.7.19 | enter following:      
+     <br><br>cmake . -DCMAKE_INSTALL_PREFIX=/application/mysql-5.7.19 \
+	-DMYSQL_DATADIR=/application/mysql-5.7.19/data \
+	-DMYSQL_UNIX_ADDR=/application/mysql-5.7.19/tmp/mysql.sock \
+	-DDEFAULT_CHARSET=utf8 \
+	-DDEFAULT_COLLATION=utf8_general_ci \
+	-DEXTRA_CHARSETS=gbk,gb2312,utf8,ascii \
+	-DENABLED_LOCAL_INFILE=ON \
+	-DWITH_INNOBASE_STORAGE_ENGINE=1 \
+	-DWITH_FEDERATED_STORAGE_ENGINE=1 \
+	-DWITH_BLACKHOLE_STORAGE_ENGINE=1 \
+	-DWITHOUT_EXAMPLE_STORAGE_ENGINE=1 \
+	-DWITHOUT_PARTITION_STORAGE_ENGINE=1 \
+	-DWITH_FAST_MUTEXES=1 \
+	-DWITH_ZLIB=bundled \
+	-DENABLED_LOCAL_INFILE=1 \
+	-DWITH_READLINE=1 \
+	-DWITH_EMBEDDED_SERVER=1 \
+	-DWITH_DEBUG=0 \
+        -DWITH_BOOST=/usr/local/boost  ##this line could be deleted for older version
+     <br><br>There are many options can be choosen. See more on 'https://dev.mysql.com/doc/mysql-installation-excerpt/5.5/en/source-configuration-options.html' 
+     <br>make && make install  ##this part takes long time
+     <br>ln -s /application/mysql-5.7.19/ /application/mysql       
+</fieldset>
+</form>
+If there is no error message, the MySQL server is successfully installed.
+<br><form>  
+<fieldset>
+     <legend>Configure Environment</legend>
+     mkdir -p /data/{3306,3307}/data  ##create directories for two instances 
+     <br>vim /data/3306/my.cnf   ##add configuration file
+     <br>This file maybe various according to your work condition, but make sure to include the following settings:
+    <br><br>[client]        
+<br>port            = 3306
+<br>socket          = /data/3306/mysql.sock
+<br><br>  
+[mysql]
+<br>no-auto-rehash
+<br><br>  
+[mysqld]
+<br>user    = mysql
+<br>port    = 3306
+<br>socket  = /data/3306/mysql.sock
+<br>basedir = /application/mysql
+<br>datadir = /data/3306/data
+<br>server-id = 1   ##very important for synchronization
+<br>XXXXXXXXX
+<br><br>[mysqldump]
+<br>quick
+<br><br>  
+[mysqld_safe]
+<br>log-error=/data/3306/mysql_3306.err
+<br>pid-file=/data/3306/mysqld.pid
+<br><br>cp /data/3306/my.cnf /data/3307/my.cnf | in the vim, press ESC, enter: ":1,$s/3306/3307/g"  ##copy configuration file to 3307 and replace all the 3306 to 3307
+<br>Now you should have:
+<br><img src="img/tree.png" height=100 alt="file tree"/>
+</fieldset>
+</form>
+
+<br><form>
+<fieldset>
+     <legend>Final Settings</legend>
+    Authorization  
+<br>chown -R mysql.mysql /data
+<br>Allocation    
+<br>echo 'export PATH=/application/mysql/bin:$PATH' >> /etc/profile | source /etc/profile  
+<br>Initialization
+<br>cd /application/mysql/bin/  #older version enters "mysql/scripts"
+<br>mysqld --initialize --basedir=/application/mysql --datadir=/data/3306/data --user=mysql 
+<br>mysqld --initialize --basedir=/application/mysql --datadir=/data/3307/data --user=mysql
+<br>#older version uses "./mysql_install_db --basedir=/application/mysql --datadir=/data/3306/data --user=mysql"
+<br>Note: A temporary password will be given
+
+
+<br>Start
+<br>mysqld_safe --defaults-file=/data/3306/my.cnf
+<br>mysqld_safe --defaults-file=/data/3307/my.cnf
+<br>You might need to switch to mysql or manually create error-log (touch /data/3306/mysql_3306.err
+)
+
+<br>Shutdown
+<br>mysqladmin -u root -p123456 -S /data/3307/mysql.sock shutdown ##-u username, -p password
+
+       <br><br>mysql -uroot -p123456 -S /data/3306/mysql.sock #login your MySQL 
+        <br>SET PASSWORD root@localhost= PASSWORD('123456');   #reset password
+
+</fieldset>
+</form>
+<br>Congratulations! You have done the installation!<br>
+
+<h4>Achieve Synchronization</h4>
+Now we can go into two MySQL instances and do syncrhonizaiton.
+<br>I take 3306 as master and 3307 as slave. Be sure to create some testing data into 3306.
+<br>Before doing Synchronization. Check the 'my.cnf' file in advance:
+<blockquote>
+I.server-id of 3306 and 3307 must be different
+<br>II.Making sure bin-log of master database is running  #I will talk about log files in another report
+</blockquote>
+<br><form>
+<fieldset>
+     <legend>Master-Slave Synchronization</legend>
+Operation on 3306      
+<br>grant authority to a new user. Be sure to include IP address ends with %
+<br>grant replication slave on *.* to 'usrname'@'192.168.1.%' identified by 'paswd'; 
+<br>flush previleges;   #fresh after grant
+<br>flush table with read lock;  #lock the master database. No new data can be written into the database during backup
+<br>show master status; #show master reading position. Slave starts to read from here.
+<br>Open a new operation window to backup data
+<br>mysqldump -uroot -p123456 --all-databases --flush-privileges --single-transaction --master-data=2 --flush-logs --event > /mysql/all.sql   #I will explain backup operations in details in another report
+<br>unlock tables;  #when backup is finished, unlock the master database 
+
+<br><br>Operation on Slave database
+<br>mysql -u -p -S /data/3307/mysql.sock < /mysql/all.sql #import data into the slave database
+<br><br>Enter following command into 3307 database: 
+<br>change master to
+<br>master_host='192.168.3.33',  (must be specific)
+<br>master_port=3306,    (no '' for numbers)
+<br>master_user='usrname',   
+<br>master_password='paswd',（password must include words+numbers）
+<br>master_log_file='mysql-bin.000001', （Better to add start reading position, get from 'show master status'）
+<br>master_log_pos=4312;
+<br><br>start slave; 
+<br>show slave status\G;  #When you see two threads are running, it is successfully running
+<br>cat relay-log.info #You can check data record position
+</fieldset>
+</form>
+<br>Master-Slave synchronization is running now. Import data into the 3306 instance and check 3307 instance!
+<br>
+
+<a href="#container">
+<img border="0" alt="Back To Top" src="img/rocket.jpg" height="50" class="fltright">
+</a>
+<div id="footer">
+<p>Copyright 2017 Siyuan Cao</p>
+</div>
+
+
+</div>
+</body>
+</html>
