@@ -4,7 +4,8 @@ To view the content, open the html files in a browser.
 
 mysql1.html: Multiple Instances and Master-Slave Synchronization
 
-/mysql: contains the images in mysql1.html
+/mysql1: contains the images in mysql1.html
+
 
 mysql2.html: Database Backup and Logs
 
